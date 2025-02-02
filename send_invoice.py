@@ -6,8 +6,6 @@ import starkbank
 
 from faker import Faker
 
-DEBUG = False
-
 
 def get_private_key() -> str:
     """
@@ -49,63 +47,41 @@ def generate_cpf() -> str:
     return f'{"".join(cpf_s[:3])}.{"".join(cpf_s[3:6])}.{"".join(cpf_s[6:9])}-{"".join(cpf_s[9:])}'
 
 
-def create_invoce() -> starkbank.Invoice:
+def create_invoice() -> starkbank.Invoice:
     """
-    Cria um invoce com dados randomicos
+    Cria um invoice com dados randomicos
     """
-    invoce =  starkbank.Invoice(
+    invoice =  starkbank.Invoice(
         amount= random.randint(100, 1000),
         name=Faker().name(),
         tax_id=generate_cpf()
     )
 
-    return invoce
+    return invoice
 
 
-def send_invoces() -> None:
+def send_invoices() -> None:
     """
-    Envia lista de invoces
+    Envia lista de invoices
     """
-    invoce_list = [create_invoce() for i in range(random.randint(1, 3))] # acertar numero invoces (8, 12)
-    invoices = starkbank.invoice.create(invoce_list)
+    n_invoices = random.randint(1, 2)
+    invoice_list = [create_invoice() for i in range(n_invoices)] # acertar numero invoices (8, 12)
+    invoices = starkbank.invoice.create(invoice_list)
 
-    # for invoice in invoices:
-    #     print(invoice)
+    print(f'{datetime.datetime.now().strftime("%d/%m, %H:%M")} | Enviando {str(n_invoices).zfill(2)} invoices:')
+    for invoice in invoices:
+        print(f'  - Nome: {invoice.name}, Doc: {invoice.tax_id}, Valor:{float(invoice.amount)/100}')
+    print('\n')
 
-
-def p_debug() -> None:
-    """
-    Imprime informacoes usadas para debug
-    """
-
-    print(starkbank.balance.get())
-
-    webhooks = starkbank.webhook.query()
-    for webhook in webhooks:
-        print(webhook)
-
-
-def job():
-    print('Boo')
 
 if __name__ == '__main__':
-    fake = Faker()
     init()
-    schedule.every(1).minutes.do(job)
-    # schedule.every(3).hour.do(send_invoces)
-    # TODO: schefuler do webhook/transfer
+    schedule.every(3).hours.do(send_invoices)
+    end = datetime.datetime.now() + datetime.timedelta(days=1)
 
-    end = datetime.datetime.now() + datetime.timedelta(minutes=5)
-    #end = datetime.datetime.now() + datetime.timedelta(days=1)
-
-    logs = starkbank.invoice.log.query(limit=150)
-
-    for log in logs:
-        print(log)
-
+    print('\nIniciando envio de invoices:')
+    send_invoices()
     #while end > datetime.datetime.now():
     #    schedule.run_pending()
     #    time.sleep(1)
-
-    if DEBUG:
-        p_debug()
+    print('Finalizando envio de invoices\n')
